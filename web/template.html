@@ -111,6 +111,12 @@ header p{margin:6px 0 0;color:var(--muted);max-width:640px}
 .deaths li.new{animation:pop .9s ease}
 @keyframes pop{0%{background:#9fd36b55}100%{}}
 .code{margin-top:16px;padding:12px 14px;border-radius:12px;border:1px dashed #ffffff30;color:var(--muted);font-size:13px}
+.reset{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);text-align:center}
+.linkbtn{background:none;border:0;padding:6px 8px;color:#77756e;font:500 12.5px/1.4 ui-sans-serif,system-ui,sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.linkbtn:hover{color:var(--ink)}
+.reset-confirm p{margin:4px 0 10px;color:var(--muted);font-size:13px}
+.danger{background:#ff7a6b22;border:1px solid #ff7a6b88;color:#ffb3a8;font:600 13px/1 ui-sans-serif,system-ui,sans-serif;padding:8px 14px;border-radius:8px;cursor:pointer}
+.danger:hover{background:#ff7a6b3a;color:#fff}
 .code b{font:700 18px ui-monospace,Menlo,monospace;color:var(--accent);letter-spacing:2px}
 .srcbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;color:var(--muted);font-size:13px}
 .srcbar label{display:flex;gap:6px;align-items:center;cursor:pointer}
@@ -165,6 +171,14 @@ footer{max-width:1100px;margin:0 auto;padding:12px 16px 40px;color:#6f6d66;font-
       </div>
       <div id="achievements"></div>
       <div class="code" id="gm2"></div>
+      <div class="reset">
+        <button type="button" class="linkbtn" id="resetBtn">Clear play history and achievements</button>
+        <div class="reset-confirm" id="resetConfirm" hidden>
+          <p>This erases every achievement, death and win in this browser, and locks Source again. It can't be undone.</p>
+          <button type="button" class="danger" id="resetYes">Clear everything</button>
+          <button type="button" class="linkbtn" id="resetNo">Cancel</button>
+        </div>
+      </div>
     </div>
     <div class="tab" id="tab-source">
       <div class="locked-src" id="srcLocked">
@@ -735,7 +749,8 @@ renderVars();
 
 // Achievements, persisted per viewer
 const STORE = "garbageman.journal.v1";
-let journal = { deaths:{}, total:0, wins:0, code:false, ach:{}, guns:[] };
+const freshJournal = () => ({ deaths:{}, total:0, wins:0, code:false, ach:{}, guns:[] });
+let journal = freshJournal();
 try { const j = JSON.parse(localStorage.getItem(STORE)); if (j && j.deaths) journal = Object.assign(journal, j); } catch(_){}
 if (journal.wins) journal.ach.win = journal.ach.win || true;   // carry over wins from before achievements existed
 function save(){ try { localStorage.setItem(STORE, JSON.stringify(journal)); } catch(_){} }
@@ -796,6 +811,17 @@ function recordWin(){
   if (game.start && Date.now() - game.start < 120000) unlock("speed");
 }
 function recordCode(){ journal.code = true; save(); renderJournal(); }
+
+// Clear play history (two-step so nobody wipes it by accident)
+const resetBtn = document.getElementById("resetBtn"), resetConfirm = document.getElementById("resetConfirm");
+function showResetConfirm(on){ resetBtn.hidden = on; resetConfirm.hidden = !on; }
+resetBtn.addEventListener("click", ()=>showResetConfirm(true));
+document.getElementById("resetNo").addEventListener("click", ()=>showResetConfirm(false));
+document.getElementById("resetYes").addEventListener("click", ()=>{
+  journal = freshJournal(); game = { start:0, no:0 };
+  save(); renderJournal(); markBreak(-1); showResetConfirm(false);
+  toast("🧹 Play history and achievements cleared.");
+});
 
 // Per-game counters, reset on New game
 let game = { start:0, no:0 };
