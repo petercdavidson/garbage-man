@@ -45,7 +45,7 @@ header p{margin:6px 0 0;color:var(--muted);max-width:640px}
 .brand b{color:var(--accent);font-weight:800}
 .brand i{font-style:normal;color:#8b8f8a;font-weight:500;font-size:10px}
 .bezel{background:var(--bezel);border-radius:12px 12px 22px 22px;padding:14px 14px 18px;box-shadow:inset 0 3px 10px #000}
-.lcd{touch-action:manipulation;position:relative;border-radius:4px;overflow:hidden;background:#a8b496;box-shadow:inset 0 0 0 2px #0005, inset 0 6px 14px #0004;cursor:pointer}
+.lcd{touch-action:none;position:relative;border-radius:4px;overflow:hidden;background:#a8b496;box-shadow:inset 0 0 0 2px #0005, inset 0 6px 14px #0004;cursor:pointer}
 .lcd canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
 .lcd::after{content:"";position:absolute;inset:0;background:linear-gradient(125deg,#ffffff22 0%,#ffffff08 35%,transparent 36%,transparent 100%);pointer-events:none}
 .hint{margin:12px 4px 4px;min-height:22px;text-align:center;font:600 12px/1.4 ui-monospace,Menlo,monospace;color:#c9cdc4}
@@ -76,6 +76,11 @@ header p{margin:6px 0 0;color:var(--muted);max-width:640px}
 .dpad button:active,.dpad button.down{background:#ffffff1c}
 .dpad .u{left:31px;top:2px}.dpad .d{left:31px;bottom:2px}.dpad .l{left:2px;top:31px}.dpad .r{right:2px;top:31px}
 .dpad.glow{box-shadow:0 3px 0 #0009, 0 0 0 2px var(--accent), 0 0 14px var(--accent)}
+.padbar{display:flex;justify-content:center;margin:2px 0 0}
+.padtoggle{border:1px solid #ffffff24;background:#0003;color:#c9cdc4;font:600 12px/1 ui-sans-serif,system-ui,sans-serif;padding:7px 12px;border-radius:999px;cursor:pointer}
+.padtoggle:hover{background:#0005;color:#fff}
+.calc.nopad .keys,.calc.nopad .legend{display:none}
+.calc.nopad{padding-bottom:16px;border-radius:28px}
 .legend{margin:16px auto 0;max-width:400px;color:var(--muted);font:12px/1.7 ui-monospace,Menlo,monospace;text-align:center}
 @media (pointer:coarse){.legend{display:none}}
 .legend kbd{padding:0 5px;border-radius:4px;background:#ffffff12;border:1px solid #ffffff1f;color:var(--ink)}
@@ -138,6 +143,7 @@ footer{max-width:1100px;margin:0 auto;padding:12px 16px 40px;color:#6f6d66;font-
       <div class="lcd" id="lcd" title="Tap an option on the screen"><canvas id="screen" width="480" height="320" aria-label="Calculator screen"></canvas></div>
     </div>
     <div class="hint" id="hint" aria-live="polite"></div>
+    <div class="padbar"><button type="button" id="padToggle" class="padtoggle" aria-pressed="false">Hide keypad</button></div>
     <div class="keys" id="keys"></div>
   </section>
 
@@ -773,23 +779,30 @@ const GAP=[176,187,160], OFF=[166,178,150], ON=[26,34,30];
 function composeTarget(t){
   target.fill(0);
   if (screenMode === "graph") target.set(graph);
-  else for (let i=0;i<128;i++){
-    const r=i>>4, c=i&15, cols=FONT[home.ch[i]]||FONT["?"], inv=home.inv[i];
+  else {
+   const hl = lcdPress || lcdHover;
+   const hlRow = ui.inMenu && hl && hl.row ? hl.row : -1;   // hovered/pressed menu row shows as one solid bar
+   for (let i=0;i<128;i++){
+    const r=i>>4, c=i&15, cols=FONT[home.ch[i]]||FONT["?"], inv=home.inv[i] || r===hlRow;
     for (let x=0;x<6;x++) for (let y=0;y<8;y++){
       const on = x<5 && y<7 && (cols[x]>>y)&1;
       target[(r*8+y)*W + c*6+x] = (on ^ inv) ? 1 : 0;
     }
+   }
   }
   overlayTarget(target);
   if (cursor && screenMode==="home" && Math.floor(t/500)%2===0){
     for (let x=0;x<5;x++) for (let y=0;y<7;y++) target[(cursor.r*8+y)*W + cursor.c*6+x] = 1;
   }
-  if (runState==="running" && !ui.inMenu){
+  // Only where the corner is blank, so it never eats the last character of a full top row.
+  let cornerFree = true;
+  for (let y=0;y<7 && cornerFree;y++) for (let x=93;x<96;x++) if (target[y*W+x]) { cornerFree = false; break; }
+  if (runState==="running" && !ui.inMenu && cornerFree){
     // Busy indicator in the top-right corner: a sliding dash while running, a marching dotted line while paused.
     const f = Math.floor(t/110);
     for (let y=0;y<7;y++){
       const on = ui.paused ? ((y+f)%2===0) : (((y - f) % 7 + 7) % 7 < 2);
-      target[y*W+94]=on?1:0; target[y*W+95]=0; target[y*W+93]=0;
+      target[y*W+94]=on?1:0;
     }
   }
 }
@@ -1031,6 +1044,7 @@ function lcdPoint(e){
   return { x: Math.floor((e.clientX - r.left) / r.width * W), y: Math.floor((e.clientY - r.top) / r.height * H) };
 }
 function lcdTarget(p){
+  if (p.x < 0 || p.x >= W || p.y < 0 || p.y >= H) return null;   // slid off the screen = cancel
   if (ui.inMenu){
     const row = p.y >> 3;
     return row >= 1 && row <= menuCount ? {row, key: ROW_KEYS[row-1]} : null;
@@ -1045,21 +1059,31 @@ function lcdTarget(p){
 const onTitle = () => runState==="running" && screenMode==="graph" && !pending;
 let lcdHover = null, lcdPress = null;
 const lcdEl = document.getElementById("lcd");
+// Nothing fires until the finger/button is released, so you can slide onto the option you meant.
+let pressing = null;   // pointerId of the active press
 lcdEl.addEventListener("pointerdown", e=>{
   e.preventDefault();
-  const t = lcdTarget(lcdPoint(e)); if (!t) return;
-  lcdPress = t; setTimeout(()=>{ lcdPress = null; }, 140);
-  if (t.row && ui.inMenu) setTimeout(()=>pressKey(t.key), 90);   // show the tapped row lit for a beat
-  else pressKey(t.key);
+  pressing = e.pointerId;
+  try { lcdEl.setPointerCapture(e.pointerId); } catch(_){}
+  lcdHover = null; lcdPress = lcdTarget(lcdPoint(e));
 });
-lcdEl.addEventListener("pointermove", e=>{ lcdHover = e.pointerType==="mouse" ? lcdTarget(lcdPoint(e)) : null; });
+lcdEl.addEventListener("pointermove", e=>{
+  if (pressing === e.pointerId) lcdPress = lcdTarget(lcdPoint(e));
+  else lcdHover = e.pointerType==="mouse" ? lcdTarget(lcdPoint(e)) : null;
+});
+lcdEl.addEventListener("pointerup", e=>{
+  if (pressing !== e.pointerId) return;
+  pressing = null; lcdPress = null;
+  const t = lcdTarget(lcdPoint(e));     // whatever is under the finger right now
+  if (e.pointerType==="mouse") lcdHover = t;
+  if (t) pressKey(t.key);
+});
+lcdEl.addEventListener("pointercancel", ()=>{ pressing = null; lcdPress = null; });
 lcdEl.addEventListener("pointerleave", ()=>{ lcdHover = null; });
-// Invert the hovered/pressed option on the LCD itself, like a selection bar
+// Title-screen options get an inverted box (menu rows are handled in composeTarget)
 function overlayTarget(t){
   const hl = lcdPress || lcdHover; if (!hl) return;
-  if (hl.row && ui.inMenu){
-    for (let y=hl.row*8; y<hl.row*8+8; y++) for (let x=0; x<W; x++) t[y*W+x] ^= 1;
-  } else if (hl.box && onTitle()){
+  if (hl.box && onTitle()){
     const [x0,y0,x1,y1] = hl.box;
     for (let y=y0; y<=y1; y++) for (let x=x0; x<=x1; x++) t[y*W+x] ^= 1;
   }
@@ -1187,6 +1211,17 @@ document.getElementById("ticalc").textContent = "The 2009 classic that defined a
 const leg = document.createElement("div"); leg.className="legend";
 leg.innerHTML = "Keyboard: <kbd>Enter</kbd> ENTER · <kbd>↑</kbd><kbd>↓</kbd> menus · <kbd>1</kbd>–<kbd>7</kbd> pick<br><kbd>Shift</kbd>/<kbd>N</kbd> 2ND · <kbd>A</kbd> ALPHA · <kbd>Esc</kbd> CLEAR · <kbd>O</kbd> ON (break)";
 document.querySelector(".calc").appendChild(leg);
+
+// Touch mode: hide the keypad and play by tapping the screen. Remembered per browser.
+const calcEl = document.querySelector(".calc"), padBtn = document.getElementById("padToggle");
+function setPad(hidden){
+  calcEl.classList.toggle("nopad", hidden);
+  padBtn.textContent = hidden ? "Show keypad" : "Hide keypad";
+  padBtn.setAttribute("aria-pressed", hidden);
+  try { localStorage.setItem("garbageman.nopad", hidden ? "1" : "0"); } catch(_){}
+}
+padBtn.addEventListener("click", ()=>setPad(!calcEl.classList.contains("nopad")));
+try { if (localStorage.getItem("garbageman.nopad") === "1") setPad(true); } catch(_){}
 
 boot();
 </script>
