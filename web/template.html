@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garbage Man</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath d='M6 1h4v1H6zM6 2h1v1H6zM9 2h1v1H9zM2 3h12v1H2zM2 4h1v1H2zM13 4h1v1h-1zM2 5h12v1H2zM3 6h1v9H3zM12 6h1v9h-1zM4 15h8v1H4zM6 7h1v6H6zM9 7h1v6H9z' fill='%23243'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#17191a; --bg2:#1f2223; --ink:#e9e6dc; --muted:#9a978c; --line:#33373a;
+  --accent:#9fd36b; --accent-ink:#1b2a10; --warn:#ffb85c; --dead:#ff7a6b;
+  --body1:#3a3f45; --body2:#24282c; --bezel:#15181b;
+  --k-dark:#1b1e21; --k-dark-top:#2c3135; --k-num:#d9dbd8; --k-num-top:#f2f3f0;
+  --k-2nd:#4f8fd6; --k-alpha:#5cb85c; --lbl-2nd:#7fb8ff; --lbl-alpha:#7fdc7f;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 20% -10%, #2a2f2a 0%, transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, #262420 0%, transparent 60%),
+    var(--bg);
+  color:var(--ink);
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  min-height:100vh;
+}
+header{max-width:1100px;margin:0 auto;padding:28px 16px 8px}
+header h1{margin:0;font:700 30px/1.1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:-.5px}
+header h1 span{color:var(--accent)}
+header p{margin:6px 0 0;color:var(--muted);max-width:640px}
+.wrap{max-width:1100px;margin:0 auto;padding:16px;display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:820px){.wrap{grid-template-columns:minmax(0,1fr)} .calc{margin:0 auto}}
+
+/* ---------- calculator ---------- */
+.calc{
+  width:100%;max-width:400px;
+  background:linear-gradient(160deg,var(--body1),var(--body2) 55%,#1c1f22);
+  border-radius:28px 28px 46px 46px;
+  padding:18px 18px 26px;
+  box-shadow:0 30px 60px -20px #000c, inset 0 2px 0 #ffffff1a, inset 0 -3px 0 #0006;
+  position:relative;
+  user-select:none;-webkit-user-select:none;
+}
+.brand{display:flex;justify-content:space-between;align-items:baseline;margin:0 6px 10px;font:700 12px/1 ui-monospace,Menlo,monospace;color:#c8cbc6;letter-spacing:1px}
+.brand b{color:var(--accent);font-weight:800}
+.brand i{font-style:normal;color:#8b8f8a;font-weight:500;font-size:10px}
+.bezel{background:var(--bezel);border-radius:12px 12px 22px 22px;padding:14px 14px 18px;box-shadow:inset 0 3px 10px #000}
+.lcd{touch-action:manipulation;position:relative;border-radius:4px;overflow:hidden;background:#a8b496;box-shadow:inset 0 0 0 2px #0005, inset 0 6px 14px #0004;cursor:pointer}
+.lcd canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.lcd::after{content:"";position:absolute;inset:0;background:linear-gradient(125deg,#ffffff22 0%,#ffffff08 35%,transparent 36%,transparent 100%);pointer-events:none}
+.hint{margin:12px 4px 4px;min-height:22px;text-align:center;font:600 12px/1.4 ui-monospace,Menlo,monospace;color:#c9cdc4}
+.hint kbd{display:inline-block;padding:0 5px;border-radius:4px;background:#0006;border:1px solid #ffffff22;color:#fff;font:inherit}
+
+.keys{display:grid;grid-template-columns:repeat(5,1fr);gap:13px 8px;margin-top:14px;position:relative}
+.key{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px}
+.key .sub{height:11px;font:700 8px/11px ui-monospace,Menlo,monospace;white-space:nowrap;display:flex;gap:5px}
+.key .sub .s{color:var(--lbl-2nd)} .key .sub .a{color:var(--lbl-alpha)}
+.key button{
+  width:100%;height:30px;border:0;border-radius:7px;cursor:pointer;
+  font:700 11px/1 ui-sans-serif,system-ui,sans-serif;color:#eef0ec;
+  background:linear-gradient(var(--k-dark-top),var(--k-dark));
+  box-shadow:0 3px 0 #0009, inset 0 1px 0 #ffffff1f;
+  transition:transform .05s, box-shadow .05s;
+  touch-action:manipulation;
+}
+.key button:active,.key button.down{transform:translateY(2px);box-shadow:0 1px 0 #0009, inset 0 1px 0 #ffffff12}
+.key.fn button{height:20px;border-radius:10px;font-size:9px;background:linear-gradient(#e4e6e2,#b9bcb7);color:#222}
+.key.num button{background:linear-gradient(var(--k-num-top),var(--k-num));color:#1b1d1f;font-size:15px}
+.key.k2 button{background:linear-gradient(#6aa6e6,var(--k-2nd));color:#fff}
+.key.ka button{background:linear-gradient(#78cc78,var(--k-alpha));color:#fff}
+.key.enter button{background:linear-gradient(#e4e6e2,#b9bcb7);color:#1b1d1f}
+.key.live button{outline:2px solid transparent}
+.key.glow button{box-shadow:0 3px 0 #0009, 0 0 0 2px var(--accent), 0 0 14px var(--accent)}
+.dpad{grid-column:4 / 6;grid-row:2 / 4;position:relative;align-self:center;justify-self:center;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle,#2b3034 30%,#1a1d20 31%,#14171a 70%);box-shadow:0 3px 0 #0009, inset 0 1px 0 #ffffff1a}
+.dpad button{position:absolute;width:34px;height:34px;border:0;background:transparent;color:#d9dcd6;font-size:13px;cursor:pointer;border-radius:8px;touch-action:manipulation}
+.dpad button:active,.dpad button.down{background:#ffffff1c}
+.dpad .u{left:31px;top:2px}.dpad .d{left:31px;bottom:2px}.dpad .l{left:2px;top:31px}.dpad .r{right:2px;top:31px}
+.dpad.glow{box-shadow:0 3px 0 #0009, 0 0 0 2px var(--accent), 0 0 14px var(--accent)}
+.legend{margin:16px auto 0;max-width:400px;color:var(--muted);font:12px/1.7 ui-monospace,Menlo,monospace;text-align:center}
+@media (pointer:coarse){.legend{display:none}}
+.legend kbd{padding:0 5px;border-radius:4px;background:#ffffff12;border:1px solid #ffffff1f;color:var(--ink)}
+
+/* ---------- side panel ---------- */
+.panel{background:#ffffff08;border:1px solid var(--line);border-radius:16px;overflow:hidden;min-width:0}
+.tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{flex:1;padding:12px 10px;background:none;border:0;color:var(--muted);font:600 13px/1 ui-sans-serif,system-ui,sans-serif;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab{display:none;padding:18px}
+.tab.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat{background:#0003;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font:700 22px/1.2 ui-monospace,Menlo,monospace}
+.stat span{color:var(--muted);font-size:12px}
+.deaths{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.deaths li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:9px 12px;border-radius:10px;background:#0002;border:1px solid var(--line)}
+.deaths li .ico{font-size:18px;text-align:center}
+.deaths li .t{font-weight:650}
+.deaths li .d{color:var(--muted);font-size:12.5px}
+.deaths li .n{font:600 12px ui-monospace,Menlo,monospace;color:var(--muted)}
+.deaths li.locked .t{color:#6b6a64;letter-spacing:2px}
+.deaths li.win{border-color:#9fd36b55;background:#9fd36b12}
+.deaths li.new{animation:pop .9s ease}
+@keyframes pop{0%{background:#9fd36b55}100%{}}
+.code{margin-top:16px;padding:12px 14px;border-radius:12px;border:1px dashed #ffffff30;color:var(--muted);font-size:13px}
+.code b{font:700 18px ui-monospace,Menlo,monospace;color:var(--accent);letter-spacing:2px}
+.srcbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;color:var(--muted);font-size:13px}
+.srcbar label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.src{margin:0;height:520px;max-height:60vh;overflow:auto;background:#0004;border:1px solid var(--line);border-radius:10px;padding:8px 0;font:12.5px/1.55 ui-monospace,"SF Mono",Menlo,monospace;counter-reset:ln;position:relative}
+.src div{padding:0 12px 0 0;white-space:pre;display:flex}
+.src div::before{counter-increment:ln;content:counter(ln);min-width:44px;padding-right:12px;text-align:right;color:#55585a;flex:none}
+.src div.cur{background:#9fd36b2a;box-shadow:inset 3px 0 0 var(--accent)}
+.src div.brk{background:#ff7a6b33;box-shadow:inset 3px 0 0 var(--dead)}
+.src .kw{color:#7fb8ff}.src .str{color:#e6c07b}.src .lbl{color:var(--accent);font-weight:700}.src .num{color:#d19a66}
+.vars{display:grid;gap:10px}
+.var{display:grid;grid-template-columns:52px 90px 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:#0002;border:1px solid var(--line);font-size:13.5px}
+.var b{font:700 18px ui-monospace,Menlo,monospace}
+.var code{font:600 14px ui-monospace,Menlo,monospace;color:var(--warn)}
+.var span{color:var(--muted)}
+.note{color:var(--muted);font-size:13px;margin:14px 0 0}
+.readme p{margin:0 0 12px}
+.readme blockquote{margin:0 0 14px;padding:10px 14px;border-left:3px solid var(--accent);background:#0002;border-radius:0 10px 10px 0;color:#d5d2c8}
+footer{max-width:1100px;margin:0 auto;padding:12px 16px 40px;color:#6f6d66;font-size:12.5px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,40px);opacity:0;background:#101211;border:1px solid #9fd36b66;color:var(--ink);padding:10px 16px;border-radius:12px;box-shadow:0 12px 30px #000a;transition:.35s;font-size:14px;pointer-events:none;z-index:9;max-width:calc(100vw - 32px)}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.toast b{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1>prgm<span>GARBAGE</span></h1>
+  <p>A web port of <em>Garbage Man</em>, the 2009 TI-BASIC text adventure. This isn't a rewrite: the page runs the original calculator source line by line on an emulated 96&times;64 LCD.</p>
+</header>
+
+<main class="wrap">
+  <section class="calc" aria-label="Calculator">
+    <div class="brand"><span>GM-84 <b>Plus</b></span><i>GARBAGE EDITION</i></div>
+    <div class="bezel">
+      <div class="lcd" id="lcd" title="Tap an option on the screen"><canvas id="screen" width="480" height="320" aria-label="Calculator screen"></canvas></div>
+    </div>
+    <div class="hint" id="hint" aria-live="polite"></div>
+    <div class="keys" id="keys"></div>
+  </section>
+
+  <aside class="panel">
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="journal">Death journal</button>
+      <button role="tab" aria-selected="false" data-tab="source">Source</button>
+      <button role="tab" aria-selected="false" data-tab="vars">Memory</button>
+      <button role="tab" aria-selected="false" data-tab="readme">readme.txt</button>
+    </div>
+    <div class="tab on" id="tab-journal">
+      <div class="stats">
+        <div class="stat"><b id="st-deaths">0</b><span>times died</span></div>
+        <div class="stat"><b id="st-found">0/11</b><span>deaths found</span></div>
+        <div class="stat"><b id="st-wins">0</b><span>wins</span></div>
+      </div>
+      <ul class="deaths" id="deaths"></ul>
+      <div class="code" id="gm2"></div>
+    </div>
+    <div class="tab" id="tab-source">
+      <div class="srcbar"><span id="src-pos">Not running</span><label><input type="checkbox" id="follow" checked> Follow execution</label></div>
+      <div class="src" id="src"></div>
+      <p class="note">Press <b>ON</b> during play to throw <code>ERR:BREAK</code> just like the real thing, then choose <b>2:Goto</b> to jump here.</p>
+    </div>
+    <div class="tab" id="tab-vars">
+      <div class="vars" id="vars"></div>
+      <p class="note">The game keeps your inventory in real-number variables. <code>22.44</code> means "you have it". Why 22.44? Only 2009 knows.</p>
+    </div>
+    <div class="tab readme" id="tab-readme">
+      <blockquote id="ticalc"></blockquote>
+      <p><b>How to play:</b> follow the prompts. When in doubt, press <b>ENTER</b>.</p>
+      <p>Garbage Man was written by Peter C. Davidson in 2009. The original <code>GARBAGE.8xp</code> still runs on a real TI-83/84 Plus or under MirageOS.</p>
+    </div>
+  </aside>
+</main>
+<footer>Web port of Garbage Man &copy; 2009 Peter C. Davidson. Calculator shell is a lookalike, not affiliated with any calculator maker.</footer>
+<div class="toast" id="toast"></div>
+
+<script type="text/plain" id="tibasic">__SOURCE__</script>
+<script>
+"use strict";
+/* ===================== constants ===================== */
+const W = 96, H = 64, SCALE = 5;
+const K = { ENTER:105, UP:25, DOWN:34, LEFT:24, RIGHT:26, CLEAR:45, SECOND:21, ALPHA:31, DEL:23, ON:101 };
+const NUMKEY = {102:0, 92:1, 93:2, 94:3, 82:4, 83:5, 84:6, 72:7, 73:8, 74:9};
+
+/* 5x7 large font, column-major, bit0 = top row, ASCII 0x20..0x7E */
+const FONT_HEX = ("0000000000 00005F0000 0007000700 147F147F14 242A7F2A12 2313086462 3649552250 0005030000 001C224100 0041221C00 14083E0814 08083E0808 0050300000 0808080808 0060600000 2010080402 "+
+"3E5149453E 00427F4000 4261514946 2141454B31 1814127F10 2745454539 3C4A494930 0171090503 3649494936 064949291E 0036360000 0056360000 0814224100 1414141414 0041221408 0201510906 "+
+"3249794136 7E1111117E 7F49494936 3E41414122 7F4141221C 7F49494941 7F09090901 3E4149497A 7F0808087F 00417F4100 2040413F01 7F08142241 7F40404040 7F020C027F 7F0408107F 3E4141413E "+
+"7F09090906 3E4151215E 7F09192946 4649494931 01017F0101 3F4040403F 1F2040201F 3F4038403F 6314081463 0708700807 6151494543 007F414100 0204081020 0041417F00 0402010204 4040404040 "+
+"0001020400 2054545478 7F48444438 3844444420 384444487F 3854545418 087E090102 0C5252523E 7F08040478 00447D4000 2040443D00 7F10284400 00417F4000 7C04180478 7C08040478 3844444438 "+
+"7C14141408 081414187C 7C08040408 4854545420 043F444020 3C4040207C 1C2040201C 3C4030403C 4428102844 0C5050503C 4464544C44 0008364100 00007F0000 0041360800 0804081008").split(" ");
+const FONT = {};
+FONT_HEX.forEach((h,i)=>{ FONT[String.fromCharCode(32+i)] = [0,2,4,6,8].map(j=>parseInt(h.substr(j,2),16)); });
+
+/* 3x5-ish variable-width small (graph screen) font, only what the title screen needs */
+const SMALL = {
+  " ":["","","","",""].map(()=>"."),
+  "-":["...","...","###","...","..."],
+  "2":["##.","..#",".#.","#..","###"],
+  "A":[".#.","#.#","###","#.#","#.#"], "C":[".##","#..","#..","#..",".##"], "G":[".##","#..","#.#","#.#",".##"],
+  "M":["#...#","##.##","#.#.#","#...#","#...#"], "N":["#..#","##.#","#.##","#..#","#..#"], "Q":[".#.","#.#","#.#","#.#",".##"],
+  "a":["...","##.",".##","#.#",".##"], "b":["#..","##.","#.#","#.#","##."], "d":["..#",".##","#.#","#.#",".##"],
+  "e":["...",".#.","#.#","##.",".##"], "f":[".#","#.","##","#.","#."], "g":["...",".##","#.#",".##","##."],
+  "h":["#..","##.","#.#","#.#","#.#"], "i":["#",".","#","#","#"], "l":["#","#","#","#","#"],
+  "m":[".....","##.#.","#.#.#","#.#.#","#.#.#"], "n":["...","##.","#.#","#.#","#.#"], "o":["...",".#.","#.#","#.#",".#."],
+  "p":["...","##.","#.#","##.","#.."], "r":["..","#.","##","#.","#."], "t":["#.","##","#.","#.",".#"],
+  "u":["...","#.#","#.#","#.#",".##"], "w":[".....","#...#","#.#.#","#.#.#",".#.#."]
+};
+
+const DEATHS = [
+  ["1A","🔥","Fourth-Degree Burns","Tried to empty the can that was on fire."],
+  ["1B","🃏","Two-Face","Opened the smoking can. Batman got involved."],
+  ["6A","🔫","Knew Too Much","Admitted to knowing about the French Mafia."],
+  ["6B","🤥","Liar, Liar","Denied knowing about the French Mafia."],
+  ["DF","👻","Chosen Poorly","Picked a destiny at the Opticon. Any destiny."],
+  ["8X","💥","Wrong Button","The crate did not like that button."],
+  ["9D","🐊","Gator Bait","Went for a stroll in the pitch dark."],
+  ["D2","🏃","Tigers Are Fast","Tried to outrun a tiger."],
+  ["A2","🦶","Rude Awakening","Kicked a sleeping tiger."],
+  ["E2","🎯","Your Aim Stinks","Shot at a sleeping tiger from a distance."],
+  ["B3","🤗","What a Meanie","Hugged the tiger. He hugged back. With claws."]
+];
+
+/* ===================== program loading ===================== */
+const SOURCE_LINES = document.getElementById("tibasic").textContent.replace(/\r/g,"").replace(/^\n+|\n+$/g,"").split("\n");
+// The first line is the "PROGRAM:GARBAGE" header, not a statement.
+const PROG = []; const LABELS = {};
+SOURCE_LINES.forEach((raw,i)=>{
+  const st = parseLine(raw, i);
+  PROG.push(st);
+  if (st.op === "lbl") LABELS[st.name] = i;
+});
+
+function parseArgs(s){
+  const out = []; let i = 0;
+  while (i < s.length){
+    while (s[i] === " ") i++;
+    if (s[i] === '"'){
+      const j = s.indexOf('"', i+1);
+      out.push({str: j < 0 ? s.slice(i+1) : s.slice(i+1, j)});
+      i = j < 0 ? s.length : j+1;
+    } else {
+      let j = i; while (j < s.length && s[j] !== "," && s[j] !== ")") j++;
+      out.push(s.slice(i, j).trim()); i = j;
+    }
+    while (i < s.length && s[i] !== ",") { if (s[i] === ")") { i = s.length; break; } i++; }
+    i++;
+  }
+  return out;
+}
+const num = r => parseFloat(String(r).replace(/⁻/g,"-"));
+function parseLine(raw, i){
+  let s = raw.trim().replace(/^:/,"");
+  if (i === 0 && /^PROGRAM:/.test(s)) return {op:"nop"};
+  if (!s || s[0] === '"') return {op:"nop"};
+  let m;
+  if ((m = s.match(/^Lbl (\w+)/))) return {op:"lbl", name:m[1]};
+  if ((m = s.match(/^Goto (\w+)/))) return {op:"goto", name:m[1]};
+  if ((m = s.match(/^If (.+)$/))) return {op:"if", cond:m[1]};
+  for (const fn of ["Output","Menu","Line","Text"]) if (s.startsWith(fn+"(")) return {op:fn.toLowerCase(), args:parseArgs(s.slice(fn.length+1))};
+  if (s === "Pause") return {op:"pause"};
+  if (["ClrHome","ClrDraw","Stop"].includes(s)) return {op:s.toLowerCase()};
+  if ((m = s.match(/^(.+)→(\w)$/))) return {op:"assign", expr:m[1], v:m[2]};
+  return {op:"nop"}; // FnOff, ZStandard, AxesOff, GridOff, CoordOn, ...
+}
+
+/* ===================== display state ===================== */
+const home = { ch: new Array(128).fill(" "), inv: new Array(128).fill(false) };
+const graph = new Uint8Array(W*H);
+let screenMode = "home";          // "home" | "graph"
+let cursor = null;                // {r,c} blinking cursor on the home screen
+const ui = { inMenu:false, paused:false };
+let menuCount = 0;
+
+function clrHome(){ home.ch.fill(" "); home.inv.fill(false); }
+function put(r,c,ch,inv=false){ const i=r*16+c; if (i>=0 && i<128){ home.ch[i]=ch; home.inv[i]=inv; } }
+function output(r,c,str){ screenMode="home"; let i=(r-1)*16+(c-1); for (const ch of str){ if (i>=128) break; if (i>=0){ home.ch[i]=ch; home.inv[i]=false; } i++; } }
+function pset(x,y,on){ if (x>=0&&x<W&&y>=0&&y<H) graph[y*W+x]=on?1:0; }
+function line(x1,y1,x2,y2,on){
+  // ZStandard then ZInteger: 1 unit per pixel, origin at (47,31)
+  let a=Math.round(x1)+47, b=31-Math.round(y1), c=Math.round(x2)+47, d=31-Math.round(y2);
+  const dx=Math.abs(c-a), dy=-Math.abs(d-b), sx=a<c?1:-1, sy=b<d?1:-1; let err=dx+dy;
+  for(;;){ pset(a,b,on); if (a===c&&b===d) break; const e2=2*err; if (e2>=dy){err+=dy;a+=sx;} if (e2<=dx){err+=dx;b+=sy;} }
+}
+function textSmall(y,x,str){
+  for (const ch of str){
+    const g = SMALL[ch] || SMALL["-"]; const w = g[0].length;
+    for (let yy=0; yy<6; yy++) for (let xx=0; xx<=w; xx++) pset(x+xx, y+yy, yy>0 && xx<w && g[yy-1][xx]==="#");
+    x += w+1;
+  }
+}
+
+/* ===================== LCD renderer ===================== */
+const canvas = document.getElementById("screen"), ctx = canvas.getContext("2d");
+const img = ctx.createImageData(W*SCALE, H*SCALE);
+const level = new Float32Array(W*H), target = new Uint8Array(W*H);
+const GAP=[176,187,160], OFF=[166,178,150], ON=[26,34,30];
+function composeTarget(t){
+  target.fill(0);
+  if (screenMode === "graph") target.set(graph);
+  else for (let i=0;i<128;i++){
+    const r=i>>4, c=i&15, cols=FONT[home.ch[i]]||FONT["?"], inv=home.inv[i];
+    for (let x=0;x<6;x++) for (let y=0;y<8;y++){
+      const on = x<5 && y<7 && (cols[x]>>y)&1;
+      target[(r*8+y)*W + c*6+x] = (on ^ inv) ? 1 : 0;
+    }
+  }
+  overlayTarget(target);
+  if (cursor && screenMode==="home" && Math.floor(t/500)%2===0){
+    for (let x=0;x<5;x++) for (let y=0;y<7;y++) target[(cursor.r*8+y)*W + cursor.c*6+x] = 1;
+  }
+  if (runState==="running" && !ui.inMenu){
+    // Busy indicator in the top-right corner: a sliding dash while running, a marching dotted line while paused.
+    const f = Math.floor(t/110);
+    for (let y=0;y<7;y++){
+      const on = ui.paused ? ((y+f)%2===0) : (((y - f) % 7 + 7) % 7 < 2);
+      target[y*W+94]=on?1:0; target[y*W+95]=0; target[y*W+93]=0;
+    }
+  }
+}
+function frame(t){
+  composeTarget(t);
+  const d = img.data, rowW = W*SCALE;
+  for (let p=0;p<W*H;p++){
+    const goal = target[p], l = level[p];
+    const nl = l + (goal - l) * (goal > l ? 0.55 : 0.22);   // slow LCD fade = ghosting
+    level[p] = Math.abs(nl-goal) < 0.01 ? goal : nl;
+    const r = OFF[0]+(ON[0]-OFF[0])*level[p], g = OFF[1]+(ON[1]-OFF[1])*level[p], b = OFF[2]+(ON[2]-OFF[2])*level[p];
+    const px=(p%W)*SCALE, py=((p/W)|0)*SCALE;
+    for (let yy=0; yy<SCALE; yy++){
+      let o = ((py+yy)*rowW + px)*4;
+      for (let xx=0; xx<SCALE; xx++, o+=4){
+        const gap = xx===SCALE-1 || yy===SCALE-1;
+        d[o]=gap?(GAP[0]*.6+r*.4):r; d[o+1]=gap?(GAP[1]*.6+g*.4):g; d[o+2]=gap?(GAP[2]*.6+b*.4):b; d[o+3]=255;
+      }
+    }
+  }
+  ctx.putImageData(img,0,0);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ===================== input ===================== */
+let pending = null;      // the current blocking wait (Pause / Menu)
+const keyQueue = [];     // buffered keys for getKey
+const BREAK = Symbol("break");
+let breakReq = false;
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function waitFor(accept, hint){ setHint(hint); return new Promise((res,rej)=>{ pending={accept,res,rej}; }); }
+
+function pressKey(code){
+  flashKey(code);
+  if (code === K.ON){
+    if (runState === "running"){ breakReq = true; if (pending){ const p=pending; pending=null; p.rej(BREAK); } }
+    return;
+  }
+  if (pending){ const r = pending.accept(code); if (r !== undefined){ const p=pending; pending=null; p.res(r); } return; }
+  if (runState === "running"){ if (keyQueue.length < 15) keyQueue.push(code); return; }
+  if (runState === "idle") idleKey(code);
+}
+
+/* ===================== interpreter ===================== */
+const vars = { W:0, F:0, G:0, D:0 };
+let runState = "boot", pc = 0, lastLbl = null, curLine = -1;
+
+function evalExpr(e){ if (e === "getKey") return null; if (/^[A-Z]$/.test(e)) return vars[e]||0; return num(e); }
+function evalCond(c){
+  const m = c.match(/^([A-Z])\s*(=|≠)\s*(.+)$/);
+  if (!m) return false;
+  const a = vars[m[1]]||0, b = num(m[3]);
+  return m[2]==="=" ? Math.abs(a-b)<1e-9 : Math.abs(a-b)>=1e-9;
+}
+
+async function menu(title, items){
+  ui.inMenu = true; screenMode = "home";
+  const saved = { ch:[...home.ch], inv:[...home.inv] };
+  let sel = 0; const n = items.length; menuCount = n;
+  const draw = () => {
+    clrHome();
+    for (let c=0;c<16;c++) put(0,c,title[c]||" ",true);
+    items.forEach((it,i)=>{
+      put(i+1,0,String(i+1),i===sel); put(i+1,1,":",i===sel);
+      [...it.text.slice(0,14)].forEach((ch,j)=>put(i+1,2+j,ch));
+    });
+  };
+  draw(); glowKeys("menu");
+  try {
+    return await waitFor(code=>{
+      if (code===K.UP){ sel=(sel-1+n)%n; draw(); return; }
+      if (code===K.DOWN){ sel=(sel+1)%n; draw(); return; }
+      if (code===K.ENTER) return sel;
+      const d = NUMKEY[code]; if (d && d<=n) return d-1;
+    }, `Tap an option · or <kbd>↑</kbd><kbd>↓</kbd> <kbd>ENTER</kbd> · <kbd>1</kbd>–<kbd>${n}</kbd>`);
+  } finally {
+    home.ch = saved.ch; home.inv = saved.inv; ui.inMenu = false;
+  }
+}
+
+async function run(){
+  runState = "running"; pc = 0; breakReq = false; keyQueue.length = 0; cursor = null;
+  let steps = 0;
+  try {
+    while (pc < PROG.length){
+      if (breakReq) throw BREAK;
+      const st = PROG[pc]; setLine(pc); pc++;
+      if (++steps % 60 === 0) await sleep(0);
+      switch (st.op){
+        case "nop": break;
+        case "lbl":
+          lastLbl = st.name;
+          if (st.name === "14") recordWin();
+          if (st.name === "WC") recordCode();
+          if (st.name === "M") glowKeys("title");
+          break;
+        case "goto":
+          if (!(st.name in LABELS)) throw new Error("LABEL");
+          if (st.name === "D") recordDeath(lastLbl);
+          pc = LABELS[st.name]; break;
+        case "if": if (!evalCond(st.cond)) pc++; break;
+        case "assign": {
+          let v = evalExpr(st.expr);
+          if (v === null){
+            if (keyQueue.length) v = keyQueue.shift();
+            else { v = 0; if (screenMode==="graph") setHint("Tap an option · or <kbd>2ND</kbd> new game · <kbd>ALPHA</kbd> info · <kbd>CLEAR</kbd> quit"); await sleep(16); }
+          }
+          vars[st.v] = v; renderVars(); break;
+        }
+        case "clrhome": clrHome(); screenMode="home"; break;
+        case "clrdraw": graph.fill(0); break;
+        case "output": output(num(st.args[0]), num(st.args[1]), st.args[2].str ?? ""); break;
+        case "pause":
+          ui.paused = true; glowKeys("enter");
+          try { await waitFor(c=> c===K.ENTER ? true : undefined, "Tap the screen or press <kbd>ENTER</kbd> to continue"); }
+          finally { ui.paused = false; }
+          break;
+        case "menu": {
+          const title = st.args[0].str ?? "";
+          const items = [];
+          for (let i=1;i+1<st.args.length;i+=2) items.push({text:st.args[i].str, target:st.args[i+1]});
+          const idx = await menu(title, items);
+          pc = LABELS[items[idx].target]; break;
+        }
+        case "line": {
+          const a = st.args.map(num);
+          screenMode = "graph"; line(a[0],a[1],a[2],a[3], a.length<5 || a[4]!==0);
+          await sleep(22); break;  // real TI-BASIC draws visibly; keep that charm
+        }
+        case "text": screenMode="graph"; textSmall(num(st.args[0]), num(st.args[1]), st.args[2].str ?? ""); break;
+        case "stop": pc = PROG.length; break;
+      }
+    }
+    finish(true);
+  } catch (e){
+    if (e === BREAK) return onBreak();
+    console.error(e); finish(false, "ERR:"+(e.message||"SYNTAX"));
+  }
+}
+
+function finish(ok, err){
+  runState = "idle"; pending = null; setLine(-1);
+  screenMode = "home"; clrHome();
+  if (ok) output(1,13,"Done"); else output(1,1,err);
+  cursor = {r:1,c:0}; glowKeys("enter");
+  setHint("Tap the screen or press <kbd>ENTER</kbd> to run prgmGARBAGE again");
+}
+
+async function onBreak(){
+  const brokeAt = pc-1;
+  runState = "break"; pending = null; ui.paused = false;
+  const choice = await (async()=>{
+    ui.inMenu = true; screenMode="home";
+    let sel = 0; const items = ["Quit","Goto"]; menuCount = 2;
+    const draw = () => { clrHome(); "ERR:BREAK".split("").forEach((c,i)=>put(0,i,c,true)); items.forEach((t,i)=>{ put(i+1,0,String(i+1),i===sel); put(i+1,1,":",i===sel); [...t].forEach((c,j)=>put(i+1,2+j,c)); }); };
+    draw();
+    const r = await waitFor(code=>{ if (code===K.UP||code===K.DOWN){ sel=1-sel; draw(); return; } if (code===K.ENTER) return sel; if (code===92) return 0; if (code===93) return 1; }, "Tap <b>Quit</b>, or <b>Goto</b> to see the line in Source");
+    ui.inMenu = false; return r;
+  })();
+  runState = "idle"; clrHome(); cursor = {r:0,c:0}; screenMode="home";
+  setHint("Tap the screen or press <kbd>ENTER</kbd> to run prgmGARBAGE again");
+  if (choice === 1){ showTab("source"); markBreak(brokeAt); }
+}
+
+/* ===================== home-screen prompt (outside the program) ===================== */
+function idleKey(code){
+  if (code === K.ENTER){
+    const r = Math.min(cursor ? cursor.r : 0, 7);
+    output(r+1, 1, "prgmGARBAGE"); cursor = null; markBreak(-1);
+    setTimeout(run, 120);
+  } else if (code === K.CLEAR){ clrHome(); cursor = {r:0,c:0}; }
+}
+async function boot(){
+  clrHome(); cursor = {r:0,c:0}; screenMode="home";
+  await sleep(500);
+  for (const ch of "prgmGARBAGE"){ put(cursor.r,cursor.c,ch); cursor.c++; await sleep(70); }
+  runState = "idle";
+  // Typed but not run yet: ENTER should execute it on the same line
+  cursor = {r:0, c:11};
+  const origIdle = idleKey;
+  idleKey = function(code){
+    if (code === K.ENTER){ cursor = null; idleKey = origIdle; setTimeout(run, 120); }
+  };
+  glowKeys("enter");
+  setHint("Tap the screen or press <kbd>ENTER</kbd> to run the program");
+}
+
+/* ===================== keypad ===================== */
+const KEYDEFS = [
+  // [label, code, row, col, class, 2nd label, alpha label]
+  ["Y=",11,1,1,"fn"],["WINDOW",12,1,2,"fn"],["ZOOM",13,1,3,"fn"],["TRACE",14,1,4,"fn"],["GRAPH",15,1,5,"fn"],
+  ["2nd",21,2,1,"k2"],["MODE",22,2,2,"","QUIT"],["DEL",23,2,3,"","INS"],
+  ["ALPHA",31,3,1,"ka","A-LOCK"],["X,T,θ,n",32,3,2,"","LINK"],["STAT",33,3,3,"","LIST"],
+  ["MATH",41,4,1,"","TEST","A"],["APPS",42,4,2,"","ANGLE","B"],["PRGM",43,4,3,"","DRAW","C"],["VARS",44,4,4,"","DISTR"],["CLEAR",45,4,5,""],
+  ["x⁻¹",51,5,1,"","MATRIX","D"],["SIN",52,5,2,"","SIN⁻¹","E"],["COS",53,5,3,"","COS⁻¹","F"],["TAN",54,5,4,"","TAN⁻¹","G"],["^",55,5,5,"","π","H"],
+  ["x²",61,6,1,"","√","I"],[",",62,6,2,"","EE","J"],["(",63,6,3,"","{","K"],[")",64,6,4,"","}","L"],["÷",65,6,5,"","e","M"],
+  ["LOG",71,7,1,"","10ˣ","N"],["7",72,7,2,"num","u","O"],["8",73,7,3,"num","v","P"],["9",74,7,4,"num","w","Q"],["×",75,7,5,"","[","R"],
+  ["LN",81,8,1,"","eˣ","S"],["4",82,8,2,"num","L4","T"],["5",83,8,3,"num","L5","U"],["6",84,8,4,"num","L6","V"],["−",85,8,5,"","]","W"],
+  ["STO→",91,9,1,"","RCL","X"],["1",92,9,2,"num","L1","Y"],["2",93,9,3,"num","L2","Z"],["3",94,9,4,"num","L3","θ"],["+",95,9,5,"","MEM","\""],
+  ["ON",101,10,1,"","OFF"],["0",102,10,2,"num","CATALOG","␣"],[".",103,10,3,"num","i",":"],["(−)",104,10,4,"num","ANS","?"],["ENTER",105,10,5,"enter","ENTRY","SOLVE"]
+];
+const keyEls = {};
+const keysEl = document.getElementById("keys");
+for (const [label, code, row, col, cls, s, a] of KEYDEFS){
+  const div = document.createElement("div");
+  div.className = "key " + (cls||"");
+  div.style.gridRow = row; div.style.gridColumn = col;
+  div.innerHTML = `<div class="sub">${s?`<span class="s">${s}</span>`:""}${a?`<span class="a">${a}</span>`:""}</div><button type="button" aria-label="${label}">${label}</button>`;
+  bindPress(div.querySelector("button"), code);
+  keysEl.appendChild(div); keyEls[code] = div;
+}
+const dpad = document.createElement("div");
+dpad.className = "dpad";
+for (const [cls, code, ch, name] of [["u",K.UP,"▲","Up"],["d",K.DOWN,"▼","Down"],["l",K.LEFT,"◀","Left"],["r",K.RIGHT,"▶","Right"]]){
+  const b = document.createElement("button"); b.type="button"; b.className=cls; b.textContent=ch; b.setAttribute("aria-label",name);
+  bindPress(b, code); dpad.appendChild(b); keyEls[code] = {querySelector:()=>b, dpad:true};
+}
+keysEl.appendChild(dpad);
+function bindPress(btn, code){
+  btn.addEventListener("pointerdown", e=>{ e.preventDefault(); pressKey(code); });
+}
+function flashKey(code){
+  const k = keyEls[code]; if (!k) return;
+  const b = k.querySelector("button"); b.classList.add("down"); setTimeout(()=>b.classList.remove("down"),110);
+}
+function glowKeys(kind){
+  document.querySelectorAll(".key.glow,.dpad.glow").forEach(e=>e.classList.remove("glow"));
+  const on = c => { const k=keyEls[c]; if (k && !k.dpad) k.classList.add("glow"); };
+  if (kind==="enter") on(K.ENTER);
+  if (kind==="title"){ on(K.SECOND); on(K.ALPHA); on(K.CLEAR); }
+  if (kind==="menu"){ on(K.ENTER); dpad.classList.add("glow"); }
+}
+/* Touch / click on the LCD: tap the thing you want.
+   Menus -> the tapped row, title screen -> the tapped option, anything else -> ENTER. */
+const ROW_KEYS = [92,93,94,82,83,84,72];   // number keys 1..7
+function lcdPoint(e){
+  const r = canvas.getBoundingClientRect();
+  return { x: Math.floor((e.clientX - r.left) / r.width * W), y: Math.floor((e.clientY - r.top) / r.height * H) };
+}
+function lcdTarget(p){
+  if (ui.inMenu){
+    const row = p.y >> 3;
+    return row >= 1 && row <= menuCount ? {row, key: ROW_KEYS[row-1]} : null;
+  }
+  if (onTitle()){
+    if (p.y < 12) return {box:[0,0,62,9], key:K.SECOND};
+    if (p.y >= 50) return p.x < 50 ? {box:[0,54,48,63], key:K.ALPHA} : {box:[53,54,95,63], key:K.CLEAR};
+    return {box:null, key:K.SECOND};          // tapping the can starts a game too
+  }
+  return {key:K.ENTER};
+}
+const onTitle = () => runState==="running" && screenMode==="graph" && !pending;
+let lcdHover = null, lcdPress = null;
+const lcdEl = document.getElementById("lcd");
+lcdEl.addEventListener("pointerdown", e=>{
+  e.preventDefault();
+  const t = lcdTarget(lcdPoint(e)); if (!t) return;
+  lcdPress = t; setTimeout(()=>{ lcdPress = null; }, 140);
+  if (t.row && ui.inMenu) setTimeout(()=>pressKey(t.key), 90);   // show the tapped row lit for a beat
+  else pressKey(t.key);
+});
+lcdEl.addEventListener("pointermove", e=>{ lcdHover = e.pointerType==="mouse" ? lcdTarget(lcdPoint(e)) : null; });
+lcdEl.addEventListener("pointerleave", ()=>{ lcdHover = null; });
+// Invert the hovered/pressed option on the LCD itself, like a selection bar
+function overlayTarget(t){
+  const hl = lcdPress || lcdHover; if (!hl) return;
+  if (hl.row && ui.inMenu){
+    for (let y=hl.row*8; y<hl.row*8+8; y++) for (let x=0; x<W; x++) t[y*W+x] ^= 1;
+  } else if (hl.box && onTitle()){
+    const [x0,y0,x1,y1] = hl.box;
+    for (let y=y0; y<=y1; y++) for (let x=x0; x<=x1; x++) t[y*W+x] ^= 1;
+  }
+}
+
+const KEYMAP = {
+  "Enter":K.ENTER, " ":K.ENTER, "ArrowUp":K.UP, "ArrowDown":K.DOWN, "ArrowLeft":K.LEFT, "ArrowRight":K.RIGHT,
+  "Escape":K.CLEAR, "Backspace":K.DEL, "Delete":K.DEL, "Shift":K.SECOND, "n":K.SECOND, "N":K.SECOND,
+  "a":K.ALPHA, "A":K.ALPHA, "Alt":K.ALPHA, "o":K.ON, "O":K.ON,
+  "0":102,"1":92,"2":93,"3":94,"4":82,"5":83,"6":84,"7":72,"8":73,"9":74,
+  "+":95,"-":85,"*":75,"/":65,"(":63,")":64,",":62,".":103,"^":55
+};
+window.addEventListener("keydown", e=>{
+  if (e.metaKey || e.ctrlKey) return;
+  if (e.target.closest && e.target.closest("input,textarea")) return;
+  const code = KEYMAP[e.key];
+  if (code === undefined || e.repeat) return;
+  e.preventDefault(); pressKey(code);
+});
+
+/* ===================== side panels ===================== */
+let hintTimer;
+function setHint(html){ document.getElementById("hint").innerHTML = html || ""; }
+
+function showTab(name){
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===name));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.id==="tab-"+name));
+  if (name==="source") scrollToLine(curLine >= 0 ? curLine : 0, true);
+}
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
+
+// Source viewer with light syntax highlighting
+const srcEl = document.getElementById("src");
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const lineEls = SOURCE_LINES.map(raw=>{
+  const div = document.createElement("div");
+  let h = esc(raw);
+  const strIdx = h.indexOf('"');
+  let code = strIdx>=0 ? h.slice(0,strIdx) : h, str = strIdx>=0 ? h.slice(strIdx) : "";
+  code = code.replace(/^(Lbl|Goto)( \w+)/, '<span class="kw">$1</span><span class="lbl">$2</span>')
+             .replace(/\b(If|Pause|ClrHome|ClrDraw|Output|Menu|Line|Text|Stop|getKey|FnOff|FnOn|ZStandard|ZInteger|AxesOff|AxesOn|GridOff|CoordOn)\b/g,'<span class="kw">$1</span>')
+             .replace(/(⁻?\d+\.?\d*)(?![^<]*>)/g,'<span class="num">$1</span>');
+  if (str){
+    // Menu() mixes strings and label targets; colour labels that follow string args
+    str = str.replace(/("[^"]*"?)|(,)(\w+)(?=,|$)/g, (m,s1,comma,lbl)=> s1 ? `<span class="str">${s1}</span>` : `${comma}<span class="lbl">${lbl}</span>`);
+  }
+  div.innerHTML = (code+str) || " ";
+  srcEl.appendChild(div); return div;
+});
+const followEl = document.getElementById("follow"), posEl = document.getElementById("src-pos");
+let lastShown = -1;
+function setLine(i){
+  curLine = i;
+  if (i === lastShown) return;
+  if (lastShown>=0) lineEls[lastShown].classList.remove("cur");
+  lastShown = i;
+  if (i < 0){ posEl.textContent = "Not running"; return; }
+  lineEls[i].classList.add("cur");
+  posEl.textContent = `Line ${i+1} of ${SOURCE_LINES.length}` + (lastLbl ? ` · in Lbl ${lastLbl}` : "");
+  if (followEl.checked && document.getElementById("tab-source").classList.contains("on")) scrollToLine(i);
+}
+function scrollToLine(i, instant){
+  const el = lineEls[i]; if (!el) return;
+  const top = el.offsetTop - srcEl.clientHeight/2;
+  srcEl.scrollTo({top, behavior: instant ? "auto" : "smooth"});
+}
+let brkLine = -1;
+function markBreak(i){
+  if (brkLine>=0) lineEls[brkLine].classList.remove("brk");
+  brkLine = i;
+  if (i>=0){ lineEls[i].classList.add("brk"); posEl.textContent = `ERR:BREAK at line ${i+1}`; requestAnimationFrame(()=>scrollToLine(i,true)); }
+}
+
+// Memory (VARS) viewer
+function renderVars(){
+  const desc = {
+    W: vars.W===22.44 ? "PISTOL (7 bullets)" : "no gun. Yet.",
+    F: vars.F===22.44 ? "FLASHLIGHT" : "no flashlight",
+    G: vars.G ? `last getKey (${vars.G})` : "title screen getKey",
+    D: "flushes the key buffer at startup"
+  };
+  document.getElementById("vars").innerHTML = ["W","F","G","D"].map(v=>
+    `<div class="var"><b>${v}</b><code>${+(+vars[v]).toFixed(4)}</code><span>${desc[v]}</span></div>`).join("");
+}
+renderVars();
+
+// Death journal, persisted per viewer
+const STORE = "garbageman.journal.v1";
+let journal = { deaths:{}, total:0, wins:0, code:false };
+try { const j = JSON.parse(localStorage.getItem(STORE)); if (j && j.deaths) journal = Object.assign(journal, j); } catch(_){}
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(journal)); } catch(_){} }
+function renderJournal(fresh){
+  const found = DEATHS.filter(d=>journal.deaths[d[0]]).length;
+  document.getElementById("st-deaths").textContent = journal.total;
+  document.getElementById("st-found").textContent = `${found}/${DEATHS.length}`;
+  document.getElementById("st-wins").textContent = journal.wins;
+  const rows = DEATHS.map(([id,ico,title,desc])=>{
+    const n = journal.deaths[id];
+    return n ? `<li class="${fresh===id?"new":""}"><span class="ico">${ico}</span><div><div class="t">${title}</div><div class="d">${desc}</div></div><span class="n">×${n}</span></li>`
+             : `<li class="locked"><span class="ico">🗑️</span><div><div class="t">??????</div><div class="d">Undiscovered death</div></div><span class="n"></span></li>`;
+  });
+  rows.push(journal.wins
+    ? `<li class="win ${fresh==="WIN"?"new":""}"><span class="ico">🏆</span><div><div class="t">League of Extraordinary Garbagemen</div><div class="d">Made it through the whole adventure.</div></div><span class="n">×${journal.wins}</span></li>`
+    : `<li class="locked win"><span class="ico">🏆</span><div><div class="t">??????</div><div class="d">The one way to survive</div></div><span class="n"></span></li>`);
+  document.getElementById("deaths").innerHTML = rows.join("");
+  document.getElementById("gm2").innerHTML = journal.code
+    ? `Your Garbage Man 2 access code: <b>82619577</b><br>Keep it somewhere safe. The sequel is any year now.`
+    : `Somewhere in this game is an access code for <em>Garbage Man 2</em>.`;
+}
+function recordDeath(lbl){
+  const d = DEATHS.find(x=>x[0]===lbl); if (!d) return;
+  const first = !journal.deaths[lbl];
+  journal.deaths[lbl] = (journal.deaths[lbl]||0)+1; journal.total++; save(); renderJournal(first?lbl:null);
+  toast(first ? `${d[1]} New death discovered: <b>${d[2]}</b>` : `${d[1]} ${d[2]} <span style="opacity:.6">(again)</span>`);
+}
+function recordWin(){ const first=!journal.wins; journal.wins++; save(); renderJournal("WIN"); toast(first?"🏆 <b>You beat Garbage Man!</b>":"🏆 Victory, once again."); }
+function recordCode(){ journal.code = true; save(); renderJournal(); }
+let toastT;
+function toast(html){ const t=document.getElementById("toast"); t.innerHTML=html; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),3200); }
+renderJournal();
+
+document.getElementById("ticalc").textContent = "The 2009 classic that defined a generation is now available for all to play! Become a garbage man in this thrilling text-based adventure featuring infuriating one-mistake-and-you-die gameplay that will keep you coming back for more, at least for about 30 minutes. There might even be a sequel?!";
+
+// Keyboard legend
+const leg = document.createElement("div"); leg.className="legend";
+leg.innerHTML = "Keyboard: <kbd>Enter</kbd> ENTER · <kbd>↑</kbd><kbd>↓</kbd> menus · <kbd>1</kbd>–<kbd>7</kbd> pick<br><kbd>Shift</kbd>/<kbd>N</kbd> 2ND · <kbd>A</kbd> ALPHA · <kbd>Esc</kbd> CLEAR · <kbd>O</kbd> ON (break)";
+document.querySelector(".calc").appendChild(leg);
+
+boot();
+</script>
+</body>
+</html>

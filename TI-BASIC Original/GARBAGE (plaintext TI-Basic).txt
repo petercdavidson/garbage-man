@@ -1,0 +1,473 @@
+PROGRAM:GARBAGE
+:"Garbage Man
+ClrHome
+0→W
+0→F
+FnOff 
+ClrDraw
+ZStandard
+ZInteger
+AxesOff
+getKey→D
+getKey→G
+GridOff
+Lbl M
+0→W
+0→F
+Line(14,⁻21,⁻14,⁻21
+Line(15,⁻20,15,17
+Line(⁻15,⁻20,⁻15,17
+Line(⁻15,17,15,17
+Line(⁻17,17,17,17
+Line(⁻17,17,⁻17,20
+Line(⁻17,20,17,20
+Line(17,20,17,17
+Line(⁻5,20,⁻5,23
+Line(⁻5,23,5,23
+Line(5,23,5,20
+Line(0,12,0,⁻15
+Line(7,9,7,⁻9
+Line(⁻7,9,⁻7,⁻9
+Line(⁻20,⁻3,20,⁻3,0
+Text(28,27,"Garbage Man
+Text(1,1,"2nd - New game
+Text(55,1,"Alpha - info
+Text(55,55,"Clear - Quit
+Lbl M2
+getKey→G
+If G=21
+Goto N
+If G=45
+Goto X
+If G=31
+Goto I
+Goto M2
+
+Lbl D
+ClrHome
+Output(4,4,"GAME OVER
+Pause 
+Goto M
+Lbl X
+ClrHome
+ClrDraw
+FnOn 
+AxesOn
+CoordOn
+Stop
+Lbl I
+ClrHome
+Output(1,1,"Garbage Man was made by PCD in  2009. Questions,comments, or bugreports? Email  peterd17 at     gmail.com.
+Output(8,1,"[enter]
+Pause 
+Goto M
+
+Lbl 14
+ClrHome
+Output(1,1,"You step into   a large space   that looks like a conference    room. There is  a large table,  and ten people  sit around it.
+Pause 
+Output(1,1,"The men all wearuniforms, and   look very       official. The   man at the end  of the table    stands up and   starts clapping.
+Pause 
+ClrHome
+Output(1,1,"'Well done!' he says with a     grin. 'You have passed our test.We offer our    congratulations.
+Pause 
+ClrHome
+Output(1,1,"'We are the     League of       Extraordinary   Garbagemen. You have proved     worthy to join  our ranks, if   you so choose.'
+Pause 
+ClrHome
+Output(1,1,"He extends his  hand and smiles.'What do you    say? Will you   join the LXG andfight for the   cause?'
+Pause 
+ClrHome
+Output(1,1,"----------------
+Output(2,1,"Find out in     Garbage Man 2:  The League of   Extraordinary   Garbagemen!
+Output(7,1,"----------------
+Pause 
+ClrHome
+Output(3,4,"You win!
+Output(5,3,"Great job!
+Pause 
+ClrHome
+Output(1,1,"Generating code.
+Output(3,1,"Please wait...
+Goto WC
+
+
+Lbl A0
+ClrHome
+Output(1,1,"You start       walking forward.After about 2   minutes, you seea tiger asleep  on the bridge infront of you.   What do you do?
+Pause 
+Lbl 12
+ClrHome
+Menu("","Kick the tiger",A2,"Shoot it",B2,"Feed it",C2,"Go back",D2
+Lbl D2
+ClrHome
+Output(1,1,"You turn around to walk back butthe tiger wakes up. You try to  outrun it, but  tigers are      really fast. He eats you.
+Pause 
+Goto D
+
+
+Lbl A2
+ClrHome
+Output(1,1,"You walk up to  the tiger and   kick it really  hard. The tiger wakes up, and   for some reason,he's really mad.He eats you.
+Pause 
+Goto D
+Lbl B2
+If W=22.44
+Goto E2
+ClrHome
+Output(1,1,"Uh, you don't   have a gun.
+Output(4,1,"Yet.
+Pause 
+Goto 12
+Lbl E2
+ClrHome
+Output(1,1,"You pull out    your pistol and fire at the     tiger. Unfortun-ately, your aim stinks. You missand the tiger   eats you.
+Pause 
+Goto D
+Lbl C2
+ClrHome
+Output(1,1,"You look around for something   to feed the     tiger. While youare looking, thetiger wakes up  and runs towardsyou.
+Pause 
+ClrHome
+Output(1,1,"He's really     close now!      What do you do?
+Pause 
+Lbl 13
+ClrHome
+Menu("","Shoot him",A3,"Give him a hug",B3
+Lbl A3
+If W=22.44
+Goto C3
+ClrHome
+Output(1,1,"You still don't have a gun, bub.
+Pause 
+Goto 13
+Lbl B3
+ClrHome
+Output(1,1,"You stretch out your arms and   give the tiger abig hug. He hugsyou too.
+Output(6,1,"With his claws.
+Output(8,1,"What a meanie.
+Pause 
+Goto D
+Lbl C3
+ClrHome
+Output(1,1,"You draw your   pistol and shootthe tiger at    point-blank     range. He yelps and falls off   the bridge into the water.
+Pause 
+ClrHome
+Output(1,1,"You continue to walk along the  bridge until youcome to a large metal door. You touch the door  and it retracts into the floor.
+Pause 
+Goto 14
+
+Lbl B0
+ClrHome
+Output(1,1,"You turn around and start       walking. After  about 5 minutes,you come to a   wall. There are two buttons on  the wall.[enter]
+Pause 
+ClrHome
+Output(1,1,"The first buttonis labeled 'no',and the second  button is       labeled 'yes'.  Very mysterious.
+Pause 
+Lbl 11
+ClrHome
+Menu("","push 'no'",A1,"push 'yes'",B1,"Go back",C1
+Lbl C1
+ClrHome
+Output(1,1,"You turn around and walk back towhere you       started.
+Pause 
+Goto 10
+Lbl A1
+ClrHome
+Output(1,1,"You push the    button labeled  'no'. A funny   computer voice  says, 'NO!'
+Pause 
+Goto 11
+Lbl B1
+ClrHome
+Output(1,1,"You push the    button. You heara strange       humming sound.  A floating,     semi-transparentface appears in front of you.
+Pause 
+ClrHome
+Output(1,1,"'Welcome to the  Opticon,' the  face says in a  dreamy voice.   'Choose your    destiny.'
+Output(7,1,"What is your    destiny?
+Pause 
+ClrHome
+Menu("","snout",DF,"plastic",DF,"pinstripe",DF,"tableau",DF,"frisbee",DF,"debate",DF,"chrome",DF
+Lbl DF
+ClrHome
+Output(1,1,"The face frowns kindly. 'I am   sorry. You have chosen poorly.  Your destiny is now death.'     And then you    die. Sorry.
+Pause 
+Goto D
+
+
+Lbl 8A
+ClrHome
+Output(1,1,"The button      flashes green,  and stays lit.  Which button do you push now?
+Pause 
+ClrHome
+Menu("","1st button",8B,"2nd button",8X,"3rd button",8X
+Lbl 8B
+ClrHome
+Output(1,1,"The button flashes green, and   you hear a creaking sound. A    trapdoor opens  beneath you and you fall into   the darkness.
+Pause 
+ClrHome
+Output(1,1,"You land hard   on a rough      wooden surface. You can't see a thing, but you  hear running    water. What do  you do?
+Pause 
+Lbl 9
+ClrHome
+Menu("","Look around",9A,"Use flashlight",9B,"Walk around",9D
+Lbl 9D
+ClrHome
+Output(1,1,"You take a few  steps, and then you fall severalfeet into cold  water and get   eaten by an     alligator.
+Pause 
+Goto D
+
+Lbl 9A
+ClrHome
+Output(1,1,"Um, it's really dark.                           You can't see   nuttin'.
+Pause 
+Goto 9
+Lbl 9B
+If F=22.44
+Goto 9C
+ClrHome
+Output(1,1,"So sorry!
+Output(3,1,"You has no      flashlight!
+Pause 
+Goto 9
+Lbl 9C
+ClrHome
+Output(1,1,"You turn on the flashlight. You see that you areunderground. Youare standing on a bridge that issurrounded by   water.
+Pause 
+ClrHome
+Output(1,1,"The beam of lighonly illuminatesa few feet aheadof you. The     bridge stretchesas far as you   can see in both directions.
+Pause 
+ClrHome
+Output(1,1,"What do you do?
+Pause 
+Lbl 10
+ClrHome
+Menu("","Walk forward",A0,"Walk backward",B0
+
+Lbl 7D
+If F=22.44
+Goto 7F
+ClrHome
+Output(1,1,"You go and open the nearest caseand reach       inside. You pull out a brand-newFLASHLIGHT! 
+22.44→F
+Pause 
+Goto 7
+Lbl 7F
+ClrHome
+Output(1,1,"Geez, how many  flashlights do  you need? Look  somewhere else.
+Pause 
+Goto 7
+
+Lbl 7E
+ClrHome
+Output(1,1,"Um, it's a      floor.                          It's a nice     floor.
+Pause 
+Goto 7
+
+Lbl N
+Lbl 1
+ClrHome
+Output(1,1,"You are a       garbage man. Youempty the       garbage. It's a lot of fun.                     [enter]
+Pause 
+ClrHome
+Output(1,1,"One day you findthree garbage   cans. The first can is on fire. The second one  is smoking. The third one looks fine.    [enter]
+Pause 
+ClrHome
+Menu("Which one?","Fire",1A,"Smoking",1B,"Normal",1C
+Lbl 1A
+ClrHome
+Output(1,1,"You attempt to  empty the       garbage can, butyou get fourth- degree burns anddie.
+Pause 
+Goto D
+Lbl 1B
+ClrHome
+Output(1,1,"You open the lidand discover    that the can is filled with     acid!
+Pause 
+ClrHome
+Output(1,1,"Your face gets  burned off and  you become      Two-face. You   roam Gotham     doing evil untilBatman throws   you off a roof.
+Pause 
+Goto D
+Lbl 1C
+ClrHome
+Output(1,1,"Yippee. Now the garbage can is  empty.
+Pause 
+ClrHome
+Output(1,1,"You walk out    into the street,and you see a   creepy-looking  hobo guy runningtowards you and yelling. What doyou do?
+Pause 
+Lbl 2
+ClrHome
+Menu("","Ignore him",2A,"Talk to him",2B,"Shoot him",2C
+Lbl 2A
+ClrHome
+Output(1,1,"You manage to   avoid the crazy hobo by ducking into an alley   filled with     dumpsters. The  hobo wanders on past. Phew.
+Pause 
+Goto 6
+Lbl 2C
+ClrHome
+Output(1,1,"Uh, you don't   have a gun.                     Yet.
+Pause 
+Goto 2
+Lbl 2B
+ClrHome
+Output(1,1,"The hobo guy    walks up to you and says, 'Come here, boy. I've got a story for you. Listen     closely...'
+Pause 
+ClrHome
+Output(1,1,"The hobo leans  in close to yourear. His breath smells like fishsticks.
+Pause 
+ClrHome
+Output(1,1,"'Five hundred   years ago, my   great-uncle Porkcame to this    land. He came insearch of a     treasure... a   great treasure.'
+Pause 
+ClrHome
+Output(1,1,"'The legend of  the treasure hasbeen passed downthrough the agesuntil I heard   about it. But   I'm getting     old.'
+Pause 
+ClrHome
+Output(1,1,"'I can't search for the treasureanymore. But I'mthe last living holder of the   secret of the   treasure. So I'mpassing it on.'
+Pause 
+ClrHome
+Output(1,1,"'What do you    say, boy? Will  you take up the legacy of       searching for   great-uncle     Pork's treasure?
+Pause 
+ClrHome
+Menu("","Sure!",2D,"Why not?",2D
+Lbl 2D
+ClrHome
+Output(1,1,"He slaps you on the back.       'Thanks, boy! I knew I could    count on you.   Here, take this stuff:'
+Pause 
+ClrHome
+Output(1,1,"The hobo gives  you an old and  tattered MAP,   and A HUNDRED   DOLLARS. Whoa.
+Pause 
+ClrHome
+Output(1,1,"He grins. 'I've been savin' thatmoney for fifty years!'
+Pause 
+ClrHome
+Output(1,1,"With that, the  hobo runs off   and hides insidea hot dog stand.
+Pause 
+ClrHome
+Output(1,1,"You pocket the  hundred dollars and take a look at the map. It  doesn't look    like much.
+Pause 
+ClrHome
+Output(1,1,"It has a pictureof a flower on  it, and the     words '2 then 1'written in blue ink. You fold itand put it in   your pocket.
+Pause 
+Lbl 3
+ClrHome
+Output(1,1,"You continue to walk down the   street until yousee a gun shop. It looks pretty cool.
+Pause 
+ClrHome
+Menu("","Go in",3B,"Keep walking",3A
+Lbl 3B
+ClrHome
+Output(1,1,"You step into   the store.      'Greetings and  welcome, kind   customer!' The  man behind the  counter says.
+Pause 
+ClrHome
+Output(1,1,"'We have many   fine product!   Please for to   look around!'   The walls are   covered with    guns.
+Pause 
+ClrHome
+Output(1,1,"Do you want to  ask him about   anything?       There are all   kinds of cool   guns here.
+Pause 
+Lbl 4
+ClrHome
+Menu("","Shotgun",4A,"AK-47",4A,"Pistol",4B,"Sniper",4A,"Tommy Gun",4A,"Bazooka",4A,"Leave store",4C
+Lbl 4A
+ClrHome
+Output(1,1,"The storekeeper shakes his head sadly.          'So sorry! Not  for sale!'
+Pause 
+Goto 4
+Lbl 4C
+Output(1,1,"You turn around and walk out of the store.      'Please come    again!' the     storekeeper     yells after you.
+Pause 
+Goto 3A
+Lbl 4B
+Output(1,1,"'Ah, yes. The   pistol!' He     says. 'Excellentchoice! Only ONEHUNDRED DOLLARS!Wonderful       bargain!'
+Pause 
+ClrHome
+Output(1,1,"What a          coincidence!    That's just how much money the  hobo guy gave   you. What do youwant to do?
+Pause 
+ClrHome
+Menu("","Buy it",5,"No thanks",4,"Leave store",4C
+Lbl 5
+ClrHome
+Output(1,1,"You hand him themoney, and he   gives you the   gun, a holster, and 7 bullets.  You now have a  PISTOL.
+22.44→W
+Pause 
+ClrHome
+Output(1,1,"Well, you're allout of money, sothere's no use  staying here anymore.
+Pause 
+Goto 4C
+Lbl 3A
+ClrHome
+Output(1,1,"You walk on downthe street.     Then, you noticea    dark alley full of         dumpsters. Oh   boy! More       garbage!
+Pause 
+ClrHome
+Output(1,1,"You walk into   the alley. It's kinda creepy,   but hey, if you don't empty the garbage, who    will?
+Pause 
+Goto 6
+Lbl 6
+ClrHome
+Output(1,1,"Suddenly, a guy who looks like  he's in the     Mafia jumps out from behind a   dumpster and    holds a gun to  your head.
+Pause 
+ClrHome
+Output(1,1,"'Do you know    anything about  the French      Mafia?' he      demands.        Well, you'd     better answer   him!
+Pause 
+ClrHome
+Menu("","Yes",6A,"No",6B,"Maybe",6C
+Lbl 6A
+ClrHome
+Output(1,1,"'Okay then.' he says. 'Nothin'  personal, but   I'm gonna have  to kill ya.'    And he does.    Dang.
+Pause 
+Goto D
+Lbl 6B
+ClrHome
+Output(1,1,"He scowls. 'You liar! I can see right through   ya. You know toomuch. Now I'm   gonna have to   kill ya.'
+Pause 
+ClrHome
+Output(1,1,"Well, that      stinks. But     that's what you get for being   a liar.
+Pause 
+Goto D
+Lbl 6C
+ClrHome
+Output(1,1,"'Aw, a wise guy,huh?' He laughs visciously.     'Take him out,  boys. We'll take'im back to the boss.'
+Pause 
+ClrHome
+Output(1,1,"Something hits  you on the back of the head, andyou black out.
+Pause 
+ClrHome
+Pause 
+ClrHome
+Output(1,1,"You wake up in adark, windowlessroom full of    crates and metalcases. The flooris made of wood planks and looksvery old.
+Pause 
+ClrHome
+Output(1,1,"A single light  bulb hangs from the ceiling.    There appears tobe no way out ofthe room.       What do you do?
+Pause 
+Lbl 7P
+ClrHome
+Menu("","Wait",7A,"Look around",7B,"Do a dance",7A
+Lbl 7A
+ClrHome
+Output(1,1,"Uh, okay. That  was fun.                        Nothing happenedthough.
+Pause 
+Goto 7P
+Lbl 7B
+Lbl 7
+ClrHome
+Menu("Look where?","Crates",7C,"Metal cases",7D,"Floor",7E
+Lbl 7C
+ClrHome
+Output(1,1,"You walk over   to the nearest  crate and pry   open the lid.   You hear a faintwhirring sound  coming from in- side the crate.
+Pause 
+ClrHome
+Output(1,1,"A smooth steel  control panel   rises out of thecrate. There arethree buttons onthe panel. Whichbutton do you   push?
+Pause 
+ClrHome
+Lbl 8
+Menu("","1st button",8X,"2nd button",8A,"3rd button",8X
+Lbl 8X
+ClrHome
+Output(1,1,"The button      begins flashing red, and an     alarm sounds.   The crate       explodes, and   you are killed  instantly.
+Pause 
+Goto D
+
+Lbl WC
+Output(1,1,"Write down this code and use it to access       Garbage Man 2.
+Output(5,3,"Your code:
+Output(6,4,"82619577
+Output(7,1,"[press enter for main menu]
+Pause 
+Goto M
