@@ -104,6 +104,10 @@ header p{margin:6px 0 0;color:var(--muted);max-width:640px}
 .deaths li .n{font:600 12px ui-monospace,Menlo,monospace;color:var(--muted)}
 .deaths li.locked .t{color:#6b6a64;letter-spacing:2px}
 .deaths li.win{border-color:#9fd36b55;background:#9fd36b12}
+.sect{margin:20px 0 10px;font:700 12px/1 ui-monospace,Menlo,monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+.sect:first-child{margin-top:0}
+.locked-src{text-align:center;padding:48px 16px}
+.locked-src .bigico{font-size:44px;margin-bottom:8px}
 .deaths li.new{animation:pop .9s ease}
 @keyframes pop{0%{background:#9fd36b55}100%{}}
 .code{margin-top:16px;padding:12px 14px;border-radius:12px;border:1px dashed #ffffff30;color:var(--muted);font-size:13px}
@@ -149,28 +153,33 @@ footer{max-width:1100px;margin:0 auto;padding:12px 16px 40px;color:#6f6d66;font-
 
   <aside class="panel">
     <div class="tabs" role="tablist">
-      <button role="tab" aria-selected="true" data-tab="journal">Death journal</button>
-      <button role="tab" aria-selected="false" data-tab="source">Source</button>
-      <button role="tab" aria-selected="false" data-tab="vars">Memory</button>
+      <button role="tab" aria-selected="true" data-tab="journal">Achievements</button>
+      <button role="tab" aria-selected="false" data-tab="source" id="srcTabBtn">Source</button>
       <button role="tab" aria-selected="false" data-tab="readme">readme.txt</button>
     </div>
     <div class="tab on" id="tab-journal">
       <div class="stats">
         <div class="stat"><b id="st-deaths">0</b><span>times died</span></div>
-        <div class="stat"><b id="st-found">0/11</b><span>deaths found</span></div>
+        <div class="stat"><b id="st-found">0</b><span>achievements</span></div>
         <div class="stat"><b id="st-wins">0</b><span>wins</span></div>
       </div>
-      <ul class="deaths" id="deaths"></ul>
+      <div id="achievements"></div>
       <div class="code" id="gm2"></div>
     </div>
     <div class="tab" id="tab-source">
+      <div class="locked-src" id="srcLocked">
+        <div class="bigico">🔒</div>
+        <p><b>No peeking.</b> The source code is full of spoilers.</p>
+        <p class="note">Beat the game once to unlock it, along with a live view of the calculator's memory.</p>
+      </div>
+      <div id="srcUnlocked" hidden>
       <div class="srcbar"><span id="src-pos">Not running</span><label><input type="checkbox" id="follow" checked> Follow execution</label></div>
       <div class="src" id="src"></div>
       <p class="note">Press <b>ON</b> during play to throw <code>ERR:BREAK</code> just like the real thing, then choose <b>2:Goto</b> to jump here.</p>
-    </div>
-    <div class="tab" id="tab-vars">
+      <h3 class="sect">Memory</h3>
       <div class="vars" id="vars"></div>
       <p class="note">The game keeps your inventory in real-number variables. <code>22.44</code> means "you have it". Why 22.44? Only 2009 knows.</p>
+      </div>
     </div>
     <div class="tab readme" id="tab-readme">
       <blockquote id="ticalc"></blockquote>
@@ -701,6 +710,31 @@ const DEATHS = [
   ["E2","🎯","Your Aim Stinks","Shot at a sleeping tiger from a distance."],
   ["B3","🤗","What a Meanie","Hugged the tiger. He hugged back. With claws."]
 ];
+// [id, icon, title, description (shown once unlocked), hint (shown while locked)]
+const ACH_STORY = [
+  ["win","🏆","League of Extraordinary Garbagemen","Beat the game.","Beat the game."],
+  ["heir","🗺️","Pork's Legacy","Took up the hobo's quest for great-uncle Pork's treasure.","Listen to your elders."],
+  ["buyer","💵","Wonderful Bargain","Bought the pistol with the hobo's life savings.","Go shopping."],
+  ["flashlight","🔦","Brand-New Flashlight","Found a flashlight in a metal case.","Search the room."],
+  ["speed","⏱️","Garbage Day Express","Beat the game in under 2 minutes from New game.","Beat the game. Fast."]
+];
+const ACH_DEATHS_ALL = ["reaper","💀","Died in Every Possible Way","Found all 11 deaths.","Find every death."];
+const ACH_EXTRA = [
+  ["shopper","🛒","Window Shopper","Asked about every gun in the shop.","Ask about everything in the store."],
+  ["dance","🕺","Nobody's Watching","Did a dance. Nothing happened, though.","Express yourself."],
+  ["floor","🪵","It's a Nice Floor","Inspected the floor. It's a nice floor.","Appreciate the little things."],
+  ["hoarder","🔦","Flashlight Hoarder","Tried to take a second flashlight.","How many do you need?"],
+  ["dark","🌑","Can't See Nuttin'","Looked around in total darkness.","Look around where there's nothing to see."],
+  ["no","🙅","NO!","Pushed the 'no' button five times in one game.","Some buttons deserve repeat visits."],
+  ["yet","🫳","Yet.","Tried to shoot something without a gun.","Reach for a weapon you don't have."],
+  ["ignored","🙈","Not My Problem","Ignored the hobo.","Mind your own business."],
+  ["credits","✉️","Questions, Comments, or Bug Reports","Read the info screen.","Check the title screen's other options."],
+  ["quitter","🚪","Rage Quit","Quit from the title screen.","Check the title screen's other options."],
+  ["break","⛔","ERR:BREAK","Pressed ON to break the program mid-game.","Use the calculator's emergency brake."],
+  ["collector","🗑️","Garbage Collector","Died 25 times. Truly one-mistake-and-you-die.","Keep at it. And at it."]
+];
+const ACH_ALL = [...ACH_STORY, ACH_DEATHS_ALL, ...ACH_EXTRA];
+const GUNS = ["Shotgun","AK-47","Pistol","Sniper","Tommy Gun","Bazooka"];
 
 /* ===================== program loading ===================== */
 const SOURCE_LINES = document.getElementById("tibasic").textContent.replace(/\r/g,"").replace(/^\n+|\n+$/g,"").split("\n");
@@ -794,15 +828,13 @@ function composeTarget(t){
   if (cursor && screenMode==="home" && Math.floor(t/500)%2===0){
     for (let x=0;x<5;x++) for (let y=0;y<7;y++) target[(cursor.r*8+y)*W + cursor.c*6+x] = 1;
   }
-  // Only where the corner is blank, so it never eats the last character of a full top row.
-  let cornerFree = true;
-  for (let y=0;y<7 && cornerFree;y++) for (let x=93;x<96;x++) if (target[y*W+x]) { cornerFree = false; break; }
-  if (runState==="running" && !ui.inMenu && cornerFree){
+  // Lives in the last pixel column (x=95), which text never uses: glyphs are 5px wide in 6px cells.
+  if (runState==="running" && !ui.inMenu){
     // Busy indicator in the top-right corner: a sliding dash while running, a marching dotted line while paused.
     const f = Math.floor(t/110);
     for (let y=0;y<7;y++){
       const on = ui.paused ? ((y+f)%2===0) : (((y - f) % 7 + 7) % 7 < 2);
-      target[y*W+94]=on?1:0;
+      target[y*W+95]=on?1:0;
     }
   }
 }
@@ -896,6 +928,7 @@ async function run(){
         case "nop": break;
         case "lbl":
           lastLbl = st.name;
+          onLabel(st.name);
           if (st.name === "14") recordWin();
           if (st.name === "WC") recordCode();
           if (st.name === "M") glowKeys("title");
@@ -926,6 +959,7 @@ async function run(){
           const items = [];
           for (let i=1;i+1<st.args.length;i+=2) items.push({text:st.args[i].str, target:st.args[i+1]});
           const idx = await menu(title, items);
+          onMenuPick(items[idx]);
           pc = LABELS[items[idx].target]; break;
         }
         case "line": {
@@ -954,13 +988,14 @@ function finish(ok, err){
 
 async function onBreak(){
   const brokeAt = pc-1;
+  unlock("break");
   runState = "break"; pending = null; ui.paused = false;
   const choice = await (async()=>{
     ui.inMenu = true; screenMode="home";
     let sel = 0; const items = ["Quit","Goto"]; menuCount = 2;
     const draw = () => { clrHome(); "ERR:BREAK".split("").forEach((c,i)=>put(0,i,c,true)); items.forEach((t,i)=>{ put(i+1,0,String(i+1),i===sel); put(i+1,1,":",i===sel); [...t].forEach((c,j)=>put(i+1,2+j,c)); }); };
     draw();
-    const r = await waitFor(code=>{ if (code===K.UP||code===K.DOWN){ sel=1-sel; draw(); return; } if (code===K.ENTER) return sel; if (code===92) return 0; if (code===93) return 1; }, "Tap <b>Quit</b>, or <b>Goto</b> to see the line in Source");
+    const r = await waitFor(code=>{ if (code===K.UP||code===K.DOWN){ sel=1-sel; draw(); return; } if (code===K.ENTER) return sel; if (code===92) return 0; if (code===93) return 1; }, sourceUnlocked() ? "Tap <b>Quit</b>, or <b>Goto</b> to see the line in Source" : "Tap <b>Quit</b> or <b>Goto</b> (Source unlocks once you win)");
     ui.inMenu = false; return r;
   })();
   runState = "idle"; clrHome(); cursor = {r:0,c:0}; screenMode="home";
@@ -1099,7 +1134,8 @@ const KEYMAP = {
 window.addEventListener("keydown", e=>{
   if (e.metaKey || e.ctrlKey) return;
   if (e.target.closest && e.target.closest("input,textarea")) return;
-  const code = KEYMAP[e.key];
+  let code = KEYMAP[e.key];
+  if (e.key === "2" && onTitle()) code = K.SECOND;   // "2nd - New game": let 2 do the obvious thing
   if (code === undefined || e.repeat) return;
   e.preventDefault(); pressKey(code);
 });
@@ -1170,46 +1206,111 @@ function renderVars(){
 }
 renderVars();
 
-// Death journal, persisted per viewer
+// Achievements, persisted per viewer
 const STORE = "garbageman.journal.v1";
-let journal = { deaths:{}, total:0, wins:0, code:false };
+let journal = { deaths:{}, total:0, wins:0, code:false, ach:{}, guns:[] };
 try { const j = JSON.parse(localStorage.getItem(STORE)); if (j && j.deaths) journal = Object.assign(journal, j); } catch(_){}
+if (journal.wins) journal.ach.win = journal.ach.win || true;   // carry over wins from before achievements existed
 function save(){ try { localStorage.setItem(STORE, JSON.stringify(journal)); } catch(_){} }
+
+const sourceUnlocked = () => journal.wins > 0;
+function updateSourceLock(){
+  const open = sourceUnlocked();
+  document.getElementById("srcLocked").hidden = open;
+  document.getElementById("srcUnlocked").hidden = !open;
+  document.getElementById("srcTabBtn").textContent = open ? "Source" : "Source 🔒";
+}
+
+const achRow = (a, fresh) => journal.ach[a[0]]
+  ? `<li class="${a[0]==="win"?"win ":""}${fresh===a[0]?"new":""}"><span class="ico">${a[1]}</span><div><div class="t">${a[2]}</div><div class="d">${a[3]}</div></div><span class="n">${a[0]==="win"?"×"+journal.wins:"✓"}</span></li>`
+  : `<li class="locked${a[0]==="win"?" win":""}"><span class="ico">🔒</span><div><div class="t">??????</div><div class="d">${a[4]}</div></div><span class="n"></span></li>`;
 function renderJournal(fresh){
-  const found = DEATHS.filter(d=>journal.deaths[d[0]]).length;
+  const deathsFound = DEATHS.filter(d=>journal.deaths[d[0]]).length;
+  const total = ACH_ALL.length + DEATHS.length;
+  const got = ACH_ALL.filter(a=>journal.ach[a[0]]).length + deathsFound;
   document.getElementById("st-deaths").textContent = journal.total;
-  document.getElementById("st-found").textContent = `${found}/${DEATHS.length}`;
+  document.getElementById("st-found").textContent = `${got}/${total}`;
   document.getElementById("st-wins").textContent = journal.wins;
-  const rows = DEATHS.map(([id,ico,title,desc])=>{
+  const deathRows = DEATHS.map(([id,ico,title,desc])=>{
     const n = journal.deaths[id];
     return n ? `<li class="${fresh===id?"new":""}"><span class="ico">${ico}</span><div><div class="t">${title}</div><div class="d">${desc}</div></div><span class="n">×${n}</span></li>`
              : `<li class="locked"><span class="ico">🗑️</span><div><div class="t">??????</div><div class="d">Undiscovered death</div></div><span class="n"></span></li>`;
   });
-  rows.push(journal.wins
-    ? `<li class="win ${fresh==="WIN"?"new":""}"><span class="ico">🏆</span><div><div class="t">League of Extraordinary Garbagemen</div><div class="d">Made it through the whole adventure.</div></div><span class="n">×${journal.wins}</span></li>`
-    : `<li class="locked win"><span class="ico">🏆</span><div><div class="t">??????</div><div class="d">The one way to survive</div></div><span class="n"></span></li>`);
-  document.getElementById("deaths").innerHTML = rows.join("");
+  const count = list => `${list.filter(a=>journal.ach[a[0]]).length}/${list.length}`;
+  document.getElementById("achievements").innerHTML =
+    `<h3 class="sect"><span>Story</span><span>${count(ACH_STORY)}</span></h3><ul class="deaths">${ACH_STORY.map(a=>achRow(a,fresh)).join("")}</ul>` +
+    `<h3 class="sect"><span>Deaths</span><span>${deathsFound}/${DEATHS.length}</span></h3><ul class="deaths">${deathRows.join("")}${achRow(ACH_DEATHS_ALL,fresh)}</ul>` +
+    `<h3 class="sect"><span>Extras</span><span>${count(ACH_EXTRA)}</span></h3><ul class="deaths">${ACH_EXTRA.map(a=>achRow(a,fresh)).join("")}</ul>`;
   document.getElementById("gm2").innerHTML = journal.code
     ? `Your Garbage Man 2 access code: <b>82619577</b><br>Keep it somewhere safe. The sequel is any year now.`
     : `Somewhere in this game is an access code for <em>Garbage Man 2</em>.`;
+  updateSourceLock();
+}
+const toastQ = [];
+function unlock(id){
+  if (journal.ach[id]) return;
+  journal.ach[id] = true; save(); renderJournal(id);
+  const a = ACH_ALL.find(x=>x[0]===id);
+  if (a) toast(`${a[1]} Achievement unlocked: <b>${a[2]}</b>`);
 }
 function recordDeath(lbl){
   const d = DEATHS.find(x=>x[0]===lbl); if (!d) return;
   const first = !journal.deaths[lbl];
   journal.deaths[lbl] = (journal.deaths[lbl]||0)+1; journal.total++; save(); renderJournal(first?lbl:null);
   toast(first ? `${d[1]} New death discovered: <b>${d[2]}</b>` : `${d[1]} ${d[2]} <span style="opacity:.6">(again)</span>`);
+  if (DEATHS.every(x=>journal.deaths[x[0]])) unlock("reaper");
+  if (journal.total >= 25) unlock("collector");
 }
-function recordWin(){ const first=!journal.wins; journal.wins++; save(); renderJournal("WIN"); toast(first?"🏆 <b>You beat Garbage Man!</b>":"🏆 Victory, once again."); }
+function recordWin(){
+  const first = !journal.wins;
+  journal.wins++; save();
+  if (first){ unlock("win"); toast("🏆 <b>You beat Garbage Man!</b> Source code unlocked."); }
+  else { renderJournal("win"); toast("🏆 Victory, once again."); }
+  if (game.start && Date.now() - game.start < 120000) unlock("speed");
+}
 function recordCode(){ journal.code = true; save(); renderJournal(); }
+
+// Per-game counters, reset on New game
+let game = { start:0, no:0 };
+const noGun = () => vars.W !== 22.44;
+function onLabel(name){
+  switch (name){
+    case "N": game = { start: Date.now(), no: 0 }; break;
+    case "2D": unlock("heir"); break;
+    case "5": unlock("buyer"); break;
+    case "7D": if (vars.F !== 22.44) unlock("flashlight"); break;
+    case "7F": unlock("hoarder"); break;
+    case "7E": unlock("floor"); break;
+    case "9A": unlock("dark"); break;
+    case "2C": unlock("yet"); break;
+    case "B2": case "A3": if (noGun()) unlock("yet"); break;
+    case "2A": unlock("ignored"); break;
+    case "I": unlock("credits"); break;
+    case "X": unlock("quitter"); break;
+    case "A1": if (++game.no >= 5) unlock("no"); break;
+  }
+}
+function onMenuPick(item){
+  if (item.text === "Do a dance") unlock("dance");
+  if (GUNS.includes(item.text) && !journal.guns.includes(item.text)){
+    journal.guns.push(item.text); save();
+    if (GUNS.every(g=>journal.guns.includes(g))) unlock("shopper");
+  }
+}
 let toastT;
-function toast(html){ const t=document.getElementById("toast"); t.innerHTML=html; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),3200); }
+function toast(html){ toastQ.push(html); if (toastQ.length === 1) showToast(); }
+function showToast(){
+  const t = document.getElementById("toast"); t.innerHTML = toastQ[0]; t.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>{ t.classList.remove("show"); setTimeout(()=>{ toastQ.shift(); if (toastQ.length) showToast(); }, 380); }, 2600);
+}
 renderJournal();
 
 document.getElementById("ticalc").textContent = "The 2009 classic that defined a generation is now available for all to play! Become a garbage man in this thrilling text-based adventure featuring infuriating one-mistake-and-you-die gameplay that will keep you coming back for more, at least for about 30 minutes. There might even be a sequel?!";
 
 // Keyboard legend
 const leg = document.createElement("div"); leg.className="legend";
-leg.innerHTML = "Keyboard: <kbd>Enter</kbd> ENTER · <kbd>↑</kbd><kbd>↓</kbd> menus · <kbd>1</kbd>–<kbd>7</kbd> pick<br><kbd>Shift</kbd>/<kbd>N</kbd> 2ND · <kbd>A</kbd> ALPHA · <kbd>Esc</kbd> CLEAR · <kbd>O</kbd> ON (break)";
+leg.innerHTML = "Keyboard: <kbd>Enter</kbd> ENTER · <kbd>↑</kbd><kbd>↓</kbd> menus · <kbd>1</kbd>–<kbd>7</kbd> pick<br><kbd>2</kbd>/<kbd>Shift</kbd> 2ND · <kbd>A</kbd> ALPHA · <kbd>Esc</kbd> CLEAR · <kbd>O</kbd> ON (break)";
 document.querySelector(".calc").appendChild(leg);
 
 // Touch mode: hide the keypad and play by tapping the screen. Remembered per browser.
